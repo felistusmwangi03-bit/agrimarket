@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>My Orders | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="page-head">
+    <span class="eyebrow">Your account</span>
+    <h1>My orders</h1>
+    <p class="muted">Track what you have ordered from our farmers.</p>
+  </div>
+  <div id="list" style="padding-bottom:3rem"><p class="empty">Loading...</p></div>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('orders');
+if (guard('buyer')) {
+  api('/orders/mine').then((orders) => {
+    $('#list').innerHTML = orders.length ? orders.map((o) => `
+      <div class="order-card">
+        <header>
+          <strong>Order #${o.id} <span class="muted" style="font-weight:500">· ${fmtDate(o.created_at)}</span></strong>
+          ${statusPill(o.status)}
+        </header>
+        ${o.items.map((i) => `<div class="sum-line"><span>${esc(i.icon)} ${i.quantity} × ${esc(i.name)} <span class="muted">(${esc(i.farm_name)})</span></span><span>${money(i.unit_price * i.quantity)}</span></div>`).join('')}
+        <div class="sum-line"><span>Delivery</span><span>${money(DELIVERY_FEE)}</span></div>
+        <div class="sum-line total"><span>Total</span><span>${money(o.total_amount)}</span></div>
+        <div class="muted" style="font-size:.82rem">Delivery: ${esc(o.delivery_address)} · ${o.payment_method === 'mpesa' ? 'M-Pesa' : 'Cash on delivery'}</div>
+      </div>`).join('') :
+      `<div class="panel empty-cart"><div class="big">📦</div><h3>No orders yet</h3><p class="muted">Your orders will appear here.</p><a class="btn btn-primary" href="catalogue.html">Browse produce →</a></div>`;
+  }).catch((e) => ($('#list').innerHTML = `<p class="empty">${esc(e.message)}</p>`));
+}
+</script>
+</body>
+</html>

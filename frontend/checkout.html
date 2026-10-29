@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Checkout | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="page-head">
+    <span class="eyebrow">Almost there</span>
+    <h1>Checkout</h1>
+    <p class="muted">Tell us where to deliver your produce.</p>
+  </div>
+  <div class="cart-layout" id="layout">
+    <form class="panel" id="form">
+      <label for="address">Delivery address</label>
+      <input id="address" required placeholder="e.g. Kilimani, Nairobi">
+      <label for="phone">Phone number</label>
+      <input id="phone" required placeholder="e.g. 0712 345 678">
+      <label for="pay">Payment method</label>
+      <select id="pay">
+        <option value="mpesa">M-Pesa (pay on confirmation)</option>
+        <option value="cash">Cash on delivery</option>
+      </select>
+      <button class="btn btn-primary btn-block" style="margin-top:1.4rem" id="btn">Place order →</button>
+      <div id="msg" class="form-msg"></div>
+    </form>
+    <aside class="panel" id="summary"></aside>
+  </div>
+  <div id="done" class="panel hidden" style="max-width:520px;margin:0 auto 4rem;text-align:center">
+    <div style="font-size:3rem">✅</div>
+    <h2>Order placed!</h2>
+    <p class="muted" id="done-text"></p>
+    <a class="btn btn-primary" href="orders.html">View my orders</a>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('cart');
+const user = guard('buyer');
+if (user && !Cart.get().length) location.href = 'cart.html';
+
+function drawSummary() {
+  const sub = Cart.subtotal();
+  $('#summary').innerHTML = `<h3>Your order</h3>` +
+    Cart.get().map((i) => `<div class="sum-line"><span>${i.qty} × ${esc(i.name)}</span><span>${money(i.price * i.qty)}</span></div>`).join('') +
+    `<div class="sum-line"><span>Delivery</span><span>${money(DELIVERY_FEE)}</span></div>
+     <div class="sum-line total"><span>Total</span><span>${money(sub + DELIVERY_FEE)}</span></div>`;
+}
+drawSummary();
+
+$('#form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const btn = $('#btn'); btn.disabled = true;
+  try {
+    const res = await api('/orders', {
+      method: 'POST',
+      body: {
+        items: Cart.get().map((i) => ({ product_id: i.id, quantity: i.qty })),
+        delivery_address: $('#address').value.trim(),
+        phone: $('#phone').value.trim(),
+        payment_method: $('#pay').value
+      }
+    });
+    Cart.clear();
+    $('#layout').classList.add('hidden');
+    $('#done').classList.remove('hidden');
+    $('#done-text').textContent = `Your order number is #${res.id}. Total: ${money(res.total)} (including delivery). The farmers will confirm shortly.`;
+  } catch (err) {
+    showMsg($('#msg'), err.message);
+    btn.disabled = false;
+  }
+});
+</script>
+</body>
+</html>

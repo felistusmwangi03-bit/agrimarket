@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login / Register | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="auth-wrap">
+    <section class="auth-art">
+      <span class="eyebrow">Welcome to AgriMarket</span>
+      <h1>Better food. <span class="serif-i" style="display:block">Stronger farms.</span></h1>
+      <p class="muted" style="max-width:22rem">One simple place for farmers to sell and buyers to source fresh local produce.</p>
+      <div class="emoji-row" aria-hidden="true"><span>🌽</span><span>🥬</span><span>🍅</span></div>
+    </section>
+
+    <section>
+      <div class="tabs" role="tablist">
+        <button id="tab-login" class="on" onclick="showTab('login')">Login</button>
+        <button id="tab-register" onclick="showTab('register')">Create account</button>
+      </div>
+
+      <!-- LOGIN -->
+      <form id="login-form">
+        <h2 style="font-size:1.8rem">Welcome back</h2>
+        <p class="muted">Log in to continue to AgriMarket.</p>
+        <label for="l-email">Email address</label>
+        <input id="l-email" type="email" placeholder="you@example.com" required autocomplete="email">
+        <label for="l-pass">Password</label>
+        <input id="l-pass" type="password" placeholder="Your password" required autocomplete="current-password">
+        <button class="btn btn-primary btn-block" style="margin-top:1.4rem">Login →</button>
+        <div id="l-msg" class="form-msg"></div>
+        <p class="muted" style="font-size:.82rem;margin-top:1rem">Demo: buyer@agrimarket.co.ke / Password123</p>
+      </form>
+
+      <!-- REGISTER -->
+      <form id="reg-form" class="hidden">
+        <h2 style="font-size:1.8rem">Create your account</h2>
+        <p class="muted">Join our community of farmers and buyers.</p>
+        <label for="r-name">Full name</label>
+        <input id="r-name" placeholder="e.g. Amina Wanjiku" required autocomplete="name">
+        <label for="r-email">Email address</label>
+        <input id="r-email" type="email" placeholder="you@example.com" required autocomplete="email">
+        <label for="r-pass">Password</label>
+        <input id="r-pass" type="password" placeholder="At least 6 characters" minlength="6" required autocomplete="new-password">
+        <label for="r-pass2">Re-enter Password</label>
+        <input id="r-pass2" type="password" placeholder="Re-enter Password" required autocomplete="new-password">
+        <label for="r-role">I am a</label>
+        <select id="r-role" onchange="farmFields()">
+          <option value="buyer">Buyer</option>
+          <option value="farmer">Farmer</option>
+        </select>
+        <div id="farm-fields" class="hidden">
+          <div class="row-2">
+            <div><label for="r-farm">Farm name</label><input id="r-farm" placeholder="e.g. Wanjiku Farm"></div>
+            <div><label for="r-loc">Location</label><input id="r-loc" placeholder="e.g. Kiambu"></div>
+          </div>
+        </div>
+        <button class="btn btn-primary btn-block" style="margin-top:1.4rem">Create account →</button>
+        <div id="r-msg" class="form-msg"></div>
+      </form>
+    </section>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('login');
+const qs = new URLSearchParams(location.search);
+
+function showTab(t) {
+  $('#login-form').classList.toggle('hidden', t !== 'login');
+  $('#reg-form').classList.toggle('hidden', t !== 'register');
+  $('#tab-login').classList.toggle('on', t === 'login');
+  $('#tab-register').classList.toggle('on', t === 'register');
+}
+function farmFields() { $('#farm-fields').classList.toggle('hidden', $('#r-role').value !== 'farmer'); }
+
+if (qs.get('tab') === 'register') showTab('register');
+if (qs.get('role') === 'farmer') { $('#r-role').value = 'farmer'; farmFields(); }
+
+function done(data) {
+  setSession(data.token, data.user);
+  const next = qs.get('next');
+  location.href = next && /^[a-z-]+\.html$/.test(next) ? next : homeFor(data.user);
+}
+
+$('#login-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  try {
+    done(await api('/auth/login', { method: 'POST', body: { email: $('#l-email').value, password: $('#l-pass').value } }));
+  } catch (err) { showMsg($('#l-msg'), err.message); }
+});
+
+$('#reg-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  if ($('#r-pass').value !== $('#r-pass2').value) return showMsg($('#r-msg'), 'The two passwords do not match.');
+  try {
+    done(await api('/auth/register', { method: 'POST', body: {
+      full_name: $('#r-name').value, email: $('#r-email').value,
+      password: $('#r-pass').value, confirm_password: $('#r-pass2').value,
+      role: $('#r-role').value, farm_name: $('#r-farm').value, location: $('#r-loc').value
+    } }));
+  } catch (err) { showMsg($('#r-msg'), err.message); }
+});
+</script>
+</body>
+</html>

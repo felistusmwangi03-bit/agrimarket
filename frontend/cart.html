@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Your Cart | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="page-head">
+    <span class="eyebrow">Your selection</span>
+    <h1>Shopping cart</h1>
+    <p class="muted">Review your produce before placing your order.</p>
+  </div>
+  <div class="cart-layout">
+    <div class="panel" id="items"></div>
+    <aside class="panel" id="summary"></aside>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('cart');
+
+function draw() {
+  const items = Cart.get();
+  if (!items.length) {
+    $('#items').innerHTML = `
+      <div class="empty-cart">
+        <div class="big">🧺</div>
+        <h3>Your cart is empty</h3>
+        <p class="muted">Find something fresh from our farmers.</p>
+        <a class="btn btn-primary" href="catalogue.html">Browse produce →</a>
+      </div>`;
+    $('#summary').classList.add('hidden');
+    return;
+  }
+  $('#summary').classList.remove('hidden');
+  $('#items').innerHTML = items.map((i) => `
+    <div class="cart-row">
+      <div class="ico ${tint(i.category_id)}">${esc(i.icon)}</div>
+      <div>
+        <strong>${esc(i.name)}</strong><br>
+        <span class="muted" style="font-size:.82rem">⌂ ${esc(i.farm_name)} · ${money(i.price)} / ${esc(i.unit)}</span><br>
+        <button class="btn-link muted" style="font-size:.8rem;margin-top:.3rem" onclick="Cart.remove(${i.id});draw()">Remove</button>
+      </div>
+      <div style="text-align:right">
+        <div class="qty"><button onclick="Cart.setQty(${i.id}, ${i.qty - 1});draw()">−</button><span>${i.qty}</span><button onclick="Cart.setQty(${i.id}, ${i.qty + 1});draw()">+</button></div>
+        <div class="price" style="margin-top:.4rem">${money(i.price * i.qty)}</div>
+      </div>
+    </div>`).join('');
+
+  const sub = Cart.subtotal();
+  $('#summary').innerHTML = `
+    <h3>Order summary</h3>
+    <div class="sum-line"><span>Subtotal</span><span>${money(sub)}</span></div>
+    <div class="sum-line"><span>Delivery</span><span>${money(DELIVERY_FEE)}</span></div>
+    <div class="sum-line total"><span>Total</span><span>${money(sub + DELIVERY_FEE)}</span></div>
+    <a class="btn btn-primary btn-block" style="margin-top:1rem" href="checkout.html">Proceed to checkout →</a>
+    <button class="btn btn-light btn-block" style="margin-top:.6rem" onclick="Cart.clear();draw()">Clear cart</button>`;
+}
+draw();
+</script>
+</body>
+</html>

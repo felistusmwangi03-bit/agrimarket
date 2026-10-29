@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Contact | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="page-head">
+    <span class="eyebrow">Get in touch</span>
+    <h1>Contact us</h1>
+    <p class="muted">Questions about an order or about selling on AgriMarket? Send us a message.</p>
+  </div>
+  <div class="contact-grid">
+    <form class="panel" id="form">
+      <div class="row-2">
+        <div><label for="name">Full name</label><input id="name" required placeholder="Your name"></div>
+        <div><label for="email">Email address</label><input id="email" type="email" required placeholder="you@example.com"></div>
+      </div>
+      <label for="subject">Subject</label>
+      <input id="subject" placeholder="What is this about?">
+      <label for="message">Message</label>
+      <textarea id="message" required placeholder="Write your message here..."></textarea>
+      <button class="btn btn-primary" style="margin-top:1.2rem" id="btn">Send message →</button>
+      <div id="msg" class="form-msg"></div>
+    </form>
+
+    <aside>
+      <div class="panel">
+        <h3>Reach us</h3>
+        <ul class="info-list">
+          <li><span>📍</span><span>AgriMarket Hub, Nairobi, Kenya</span></li>
+          <li><span>✉️</span><span>hello@agrimarket.co.ke</span></li>
+          <li><span>📞</span><span>+254 700 000 000</span></li>
+          <li><span>🕗</span><span>Mon to Sat, 8am to 6pm</span></li>
+        </ul>
+      </div>
+      <div class="panel" style="margin-top:1rem">
+        <h3>Quick answers</h3>
+        <details><summary>How do I sell on AgriMarket?</summary><p>Create an account, choose “Farmer” under “I am a”, then add your produce from your farm dashboard.</p></details>
+        <details><summary>How do I pay?</summary><p>Choose M-Pesa or cash on delivery at checkout.</p></details>
+        <details><summary>How much is delivery?</summary><p>A flat fee of KSh 100 per order.</p></details>
+      </div>
+    </aside>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('contact');
+const u = getUser();
+if (u) { $('#name').value = u.full_name; $('#email').value = u.email; }
+
+$('#form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  $('#btn').disabled = true;
+  try {
+    const r = await api('/contact', { method: 'POST', body: {
+      name: $('#name').value, email: $('#email').value, subject: $('#subject').value, message: $('#message').value } });
+    showMsg($('#msg'), r.message, 'ok');
+    $('#subject').value = ''; $('#message').value = '';
+  } catch (err) { showMsg($('#msg'), err.message); }
+  $('#btn').disabled = false;
+});
+</script>
+</body>
+</html>

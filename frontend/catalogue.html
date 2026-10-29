@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Produce Catalogue | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="page-head">
+    <span class="eyebrow">From our farmers</span>
+    <h1>Produce catalogue</h1>
+    <p class="muted">Browse seasonal produce, compare prices and add your favourites to the cart.</p>
+  </div>
+
+  <div class="toolbar">
+    <input id="search" type="search" placeholder="⌕  Search produce or farmer..." aria-label="Search produce or farmer">
+    <select id="category" aria-label="Category"><option value="">All categories</option></select>
+    <select id="sort" aria-label="Sort">
+      <option value="">Featured</option>
+      <option value="price_asc">Price: low to high</option>
+      <option value="price_desc">Price: high to low</option>
+      <option value="name">Name: A to Z</option>
+      <option value="newest">Newest</option>
+    </select>
+  </div>
+  <div class="count-line" id="count">Loading...</div>
+  <div class="grid-4" id="grid" style="padding-bottom:3rem"></div>
+</main>
+
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+  initPage('catalogue');
+  const params = new URLSearchParams(location.search);
+  $('#search').value = params.get('search') || '';
+
+  async function load() {
+    const q = new URLSearchParams();
+    if ($('#search').value.trim()) q.set('search', $('#search').value.trim());
+    if ($('#category').value) q.set('category', $('#category').value);
+    if ($('#sort').value) q.set('sort', $('#sort').value);
+    try {
+      const list = await api('/products?' + q.toString());
+      cacheProducts(list);
+      $('#count').textContent = `Showing ${list.length} item${list.length === 1 ? '' : 's'}`;
+      $('#grid').innerHTML = list.length ? list.map(productCard).join('') : '<p class="empty">No produce matches your search. Try something else.</p>';
+    } catch (e) {
+      $('#count').textContent = '';
+      $('#grid').innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+    }
+  }
+
+  (async () => {
+    try {
+      const cats = await api('/categories');
+      $('#category').innerHTML += cats.map((c) => `<option value="${c.id}">${esc(c.name)}</option>`).join('');
+      if (params.get('category')) $('#category').value = params.get('category');
+    } catch (e) { /* the product list will show the error */ }
+    load();
+  })();
+
+  let timer;
+  $('#search').addEventListener('input', () => { clearTimeout(timer); timer = setTimeout(load, 250); });
+  $('#category').addEventListener('change', load);
+  $('#sort').addEventListener('change', load);
+</script>
+</body>
+</html>

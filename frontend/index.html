@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>AgriMarket | Fresh Produce Direct From Farmers</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main>
+  <!-- Hero -->
+  <section class="hero">
+    <div class="container hero-grid">
+      <div>
+        <span class="eyebrow">Fresh · Local · Fair</span>
+        <h1>Farm-fresh produce, <span class="serif-i">straight to your table.</span></h1>
+        <p class="lead">Connect directly with smallholder farmers and order fresh fruits, vegetables and grains from trusted local growers.</p>
+        <div class="hero-actions">
+          <a class="btn btn-primary" href="catalogue.html">Browse produce →</a>
+          <a class="btn btn-light" href="login.html?tab=register">Join AgriMarket</a>
+        </div>
+        <div class="hero-checks"><span>✓ Verified farmers</span><span>✓ Fair prices</span><span>✓ Simple ordering</span></div>
+      </div>
+      <div class="hero-art" aria-hidden="true">
+        <div class="sun"></div>
+        <div class="plate"><span>🥑</span><span>🍅</span><span>🥕</span></div>
+        <div class="chip">Harvested with care</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categories -->
+  <section class="section alt">
+    <div class="container">
+      <div class="section-head">
+        <h2>Good food starts here.</h2>
+        <a class="link-arrow" href="catalogue.html">View all produce →</a>
+      </div>
+      <div class="grid-4" id="categories"></div>
+    </div>
+  </section>
+
+  <!-- Fresh this week -->
+  <section class="section">
+    <div class="container">
+      <div class="section-head">
+        <div><span class="eyebrow">Farmer picks</span><h2 style="margin:0">Fresh this week</h2></div>
+        <a class="link-arrow" href="catalogue.html">Shop all →</a>
+      </div>
+      <div class="grid-4" id="fresh"></div>
+    </div>
+  </section>
+
+  <!-- Farmer call-to-action -->
+  <section class="section" style="padding-top:0">
+    <div class="container">
+      <div class="cta-band">
+        <div class="who">
+          <div class="avatar" aria-hidden="true">👩🏾‍🌾</div>
+          <div>
+            <span class="eyebrow" style="margin-bottom:.2rem">Grow with us</span>
+            <h2>Are you a farmer?</h2>
+            <p>Reach more customers and sell your harvest directly through AgriMarket.</p>
+          </div>
+        </div>
+        <a class="btn btn-dark" href="login.html?tab=register&role=farmer">Get started →</a>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+  initPage('home');
+
+  (async () => {
+    try {
+      const [cats, fresh] = await Promise.all([api('/categories'), api('/products?limit=4')]);
+      $('#categories').innerHTML = cats.map((c, i) => `
+        <a class="cat-card tint-${i % 4}" href="catalogue.html?category=${c.id}">
+          <span class="ico">${esc(c.icon)}</span>
+          <div><h3>${esc(c.name)}</h3><small>${esc(c.description)}</small></div>
+        </a>`).join('');
+      cacheProducts(fresh);
+      $('#fresh').innerHTML = fresh.map(productCard).join('');
+    } catch (e) {
+      $('#fresh').innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+    }
+  })();
+</script>
+</body>
+</html>

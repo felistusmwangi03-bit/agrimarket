@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Product | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <p class="muted" style="padding-top:1.5rem;font-size:.85rem"><a href="catalogue.html">← Back to catalogue</a></p>
+  <div id="detail"><p class="empty">Loading...</p></div>
+  <div id="more-wrap" class="hidden" style="padding-bottom:3rem">
+    <h2 style="font-size:1.4rem">More from this farm</h2>
+    <div class="grid-4" id="more"></div>
+  </div>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('catalogue');
+const id = new URLSearchParams(location.search).get('id');
+let qty = 1;
+
+(async () => {
+  try {
+    const p = await api('/products/' + id);
+    cacheProducts([p]);
+    document.title = p.name + ' | AgriMarket';
+    const out = p.stock_qty < 1;
+    $('#detail').innerHTML = `
+      <div class="detail">
+        <div class="big-thumb ${tint(p.category_id)}">${esc(p.icon)}</div>
+        <div>
+          ${p.badge ? `<span class="pill">${esc(p.badge)}</span>` : ''}
+          <h1 style="margin-top:.6rem">${esc(p.name)}</h1>
+          <p class="muted">⌂ ${esc(p.farm_name)} · ${esc(p.location)} · ${esc(p.category)}</p>
+          <div class="price-big">${money(p.price)} <small class="muted" style="font-size:1rem;font-weight:500">/ ${esc(p.unit)}</small></div>
+          <p>${esc(p.description)}</p>
+          <p class="muted" style="font-size:.9rem">${out ? 'Out of stock' : p.stock_qty + ' ' + esc(p.unit) + ' available'}</p>
+          <div style="display:flex;gap:1rem;align-items:center;flex-wrap:wrap">
+            <div class="qty"><button onclick="step(-1)" aria-label="Less">−</button><span id="q">1</span><button onclick="step(1)" aria-label="More">+</button></div>
+            <button class="btn btn-primary" ${out ? 'disabled' : ''} onclick="Cart.add(PRODUCT_CACHE[${p.id}], qty)">Add to cart</button>
+          </div>
+        </div>
+      </div>`;
+    window.maxQty = p.stock_qty;
+
+    const farm = await api('/farmers/' + p.farmer_id);
+    const others = farm.products.filter((x) => x.id !== p.id).map((x) => ({ ...x, farm_name: farm.farm_name, category_id: p.category_id }));
+    if (others.length) {
+      cacheProducts(others);
+      $('#more').innerHTML = others.map(productCard).join('');
+      $('#more-wrap').classList.remove('hidden');
+    }
+  } catch (e) {
+    $('#detail').innerHTML = `<p class="empty">${esc(e.message)}</p>`;
+  }
+})();
+
+function step(d) {
+  qty = Math.max(1, Math.min(window.maxQty || 99, qty + d));
+  $('#q').textContent = qty;
+}
+</script>
+</body>
+</html>

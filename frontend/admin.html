@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Admin | AgriMarket</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@1,9..144,500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<div id="site-header"></div>
+
+<main class="container">
+  <div class="page-head">
+    <span class="eyebrow">Administrator</span>
+    <h1>Admin panel</h1>
+    <p class="muted">Keep an eye on users, farmers, orders and messages.</p>
+  </div>
+
+  <div class="stats">
+    <div class="stat"><b id="s-buyers">0</b><span>Buyers</span></div>
+    <div class="stat"><b id="s-farmers">0</b><span>Farmers</span></div>
+    <div class="stat"><b id="s-orders">0</b><span>Orders</span></div>
+    <div class="stat"><b id="s-revenue">KSh 0</b><span>Order value</span></div>
+  </div>
+
+  <div class="dash-tabs">
+    <button id="t-users" class="on" onclick="tab('users')">Users</button>
+    <button id="t-farmers" onclick="tab('farmers')">Farmers</button>
+    <button id="t-orders" onclick="tab('orders')">Orders</button>
+    <button id="t-messages" onclick="tab('messages')">Messages</button>
+  </div>
+
+  <section id="pane-users" style="padding-bottom:3rem"><div class="table-wrap"><table>
+    <thead><tr><th>ID</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th><th></th></tr></thead><tbody id="users"></tbody></table></div></section>
+
+  <section id="pane-farmers" class="hidden" style="padding-bottom:3rem"><div class="table-wrap"><table>
+    <thead><tr><th>Farm</th><th>Owner</th><th>Location</th><th>Products</th><th>Status</th><th></th></tr></thead><tbody id="farmers"></tbody></table></div></section>
+
+  <section id="pane-orders" class="hidden" style="padding-bottom:3rem"><div class="table-wrap"><table>
+    <thead><tr><th>Order</th><th>Date</th><th>Buyer</th><th>Total</th><th>Status</th></tr></thead><tbody id="orders"></tbody></table></div></section>
+
+  <section id="pane-messages" class="hidden" style="padding-bottom:3rem"><div id="messages"></div></section>
+</main>
+<div id="site-footer"></div>
+<script src="js/app.js"></script>
+<script>
+
+initPage('admin');
+if (guard('admin')) start();
+
+function tab(t) {
+  ['users', 'farmers', 'orders', 'messages'].forEach((n) => {
+    $('#pane-' + n).classList.toggle('hidden', n !== t);
+    $('#t-' + n).classList.toggle('on', n === t);
+  });
+}
+
+async function start() {
+  try {
+    const s = await api('/admin/stats');
+    $('#s-buyers').textContent = s.buyers; $('#s-farmers').textContent = s.farmers;
+    $('#s-orders').textContent = s.orders; $('#s-revenue').textContent = money(s.revenue);
+    loadUsers(); loadFarmers(); loadOrders(); loadMessages();
+  } catch (e) { toast(e.message); }
+}
+
+async function loadUsers() {
+  const rows = await api('/admin/users');
+  $('#users').innerHTML = rows.map((u) => `
+    <tr><td>${u.id}</td><td>${esc(u.full_name)}</td><td>${esc(u.email)}</td>
+    <td><span class="pill ${u.role === 'admin' ? 'warn' : ''}">${u.role}</span></td><td>${fmtDate(u.created_at)}</td>
+    <td>${u.role === 'admin' ? '' : `<button class="btn btn-danger btn-sm" onclick="delUser(${u.id})">Delete</button>`}</td></tr>`).join('');
+}
+async function delUser(id) {
+  if (!confirm('Delete this user?')) return;
+  try { await api('/admin/users/' + id, { method: 'DELETE' }); toast('User deleted'); loadUsers(); } catch (e) { toast(e.message); }
+}
+
+async function loadFarmers() {
+  const rows = await api('/farmers');
+  $('#farmers').innerHTML = rows.map((f) => `
+    <tr><td><strong>${esc(f.farm_name)}</strong></td><td>${esc(f.owner)}</td><td>${esc(f.location)}</td><td>${f.product_count}</td>
+    <td>${f.verified ? '<span class="pill">Verified</span>' : '<span class="pill warn">Pending</span>'}</td>
+    <td><button class="btn btn-light btn-sm" onclick="verify(${f.id}, ${f.verified ? 'false' : 'true'})">${f.verified ? 'Unverify' : 'Verify'}</button></td></tr>`).join('');
+}
+async function verify(id, v) {
+  try { await api(`/admin/farmers/${id}/verify`, { method: 'PATCH', body: { verified: v } }); toast('Farmer updated'); loadFarmers(); } catch (e) { toast(e.message); }
+}
+
+async function loadOrders() {
+  const rows = await api('/admin/orders');
+  $('#orders').innerHTML = rows.length ? rows.map((o) => `
+    <tr><td>#${o.id}</td><td>${fmtDate(o.created_at)}</td><td>${esc(o.buyer)}</td><td>${money(o.total_amount)}</td>
+    <td><select onchange="setStatus(${o.id}, this.value)" style="padding:.35rem .6rem;width:auto">
+      ${['pending', 'confirmed', 'delivered', 'cancelled'].map((s) => `<option ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}
+    </select></td></tr>`).join('') : '<tr><td colspan="5" class="muted">No orders yet.</td></tr>';
+}
+async function setStatus(id, status) {
+  try { await api(`/orders/${id}/status`, { method: 'PATCH', body: { status } }); toast('Order updated'); } catch (e) { toast(e.message); }
+}
+
+async function loadMessages() {
+  const rows = await api('/admin/messages');
+  $('#messages').innerHTML = rows.length ? rows.map((m) => `
+    <div class="order-card"><header><strong>${esc(m.subject || '(no subject)')}</strong><span class="muted">${fmtDate(m.created_at)}</span></header>
+    <p style="margin:.2rem 0">${esc(m.message)}</p><span class="muted" style="font-size:.85rem">${esc(m.name)} · ${esc(m.email)}</span></div>`).join('')
+    : '<p class="empty">No messages yet.</p>';
+}
+</script>
+</body>
+</html>
