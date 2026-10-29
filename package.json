@@ -1,0 +1,12 @@
+{
+  "name": "agrimarket",
+  "version": "1.0.0",
+  "private": true,
+  "description": "AgriMarket - farmer-to-buyer marketplace. Root scripts let hosting platforms build and start the app in backend/.",
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "build": "npm install --prefix backend",
+    "start": "npm start --prefix backend",
+    "setup": "npm run setup --prefix backend"
+  }
+}

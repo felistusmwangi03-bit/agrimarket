@@ -1,0 +1,28 @@
+# Render Blueprint: lets Render create the web service from this file.
+# Secrets are NOT stored here: Render asks you to type them in its dashboard (sync: false).
+services:
+  - type: web
+    name: agrimarket
+    runtime: node
+    plan: free
+    branch: main
+    buildCommand: npm run build
+    startCommand: npm start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: DB_SSL
+        value: "true"
+      - key: JWT_SECRET
+        generateValue: true
+      - key: DB_HOST
+        sync: false
+      - key: DB_PORT
+        sync: false
+      - key: DB_USER
+        sync: false
+      - key: DB_PASSWORD
+        sync: false
+      - key: DB_NAME
+        sync: false
